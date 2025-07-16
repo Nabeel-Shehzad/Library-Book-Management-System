@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Library Management System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h1 class="display-4 text-center mb-4">
+      <i class="fas fa-book-open text-primary me-3"></i>
+      Library Management System
+    </h1>
+    <p class="lead text-center text-muted">Manage your library's books, members, and loans efficiently</p>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-5">
+  <div class="col-md-3 mb-3">
+    <div class="card bg-primary text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title" id="total-books">0</h4>
+            <p class="card-text">Total Books</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-book fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-3">
+    <div class="card bg-success text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title" id="available-books">0</h4>
+            <p class="card-text">Available Books</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-check-circle fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-3">
+    <div class="card bg-info text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title" id="total-members">0</h4>
+            <p class="card-text">Total Members</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-users fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-3">
+    <div class="card bg-warning text-white h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title" id="active-loans">0</h4>
+            <p class="card-text">Active Loans</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-exchange-alt fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-5">
+  <div class="col-12">
+    <h2 class="mb-4">
+      <i class="fas fa-rocket me-2"></i>Quick Actions
+    </h2>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body text-center">
+        <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+        <h5 class="card-title">Add New Book</h5>
+        <p class="card-text">Add a new book to the library collection</p>
+        <a href="{{ url_for('main.books') }}" class="btn btn-primary">
+          <i class="fas fa-plus me-1"></i>Add Book
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body text-center">
+        <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+        <h5 class="card-title">Register Member</h5>
+        <p class="card-text">Register a new library member</p>
+        <a href="{{ url_for('main.members') }}" class="btn btn-success">
+          <i class="fas fa-user-plus me-1"></i>Add Member
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-3">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body text-center">
+        <i class="fas fa-handshake fa-3x text-info mb-3"></i>
+        <h5 class="card-title">Manage Loans</h5>
+        <p class="card-text">Handle book borrowing and returns</p>
+        <a href="{{ url_for('main.loans') }}" class="btn btn-info">
+          <i class="fas fa-exchange-alt me-1"></i>Manage Loans
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row">
+  <div class="col-12">
+    <h2 class="mb-4">
+      <i class="fas fa-clock me-2"></i>Recent Activity
+    </h2>
+    <div class="card">
+      <div class="card-body">
+        <div id="recent-activity">
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p>Loading recent activity...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    loadDashboardStats();
+  });
+
+  async function loadDashboardStats() {
+    try {
+      // Load books stats
+      const booksResponse = await fetch('/api/v1/books');
+      const books = await booksResponse.json();
+      const availableBooks = books.filter(book => book.available).length;
+
+      document.getElementById('total-books').textContent = books.length;
+      document.getElementById('available-books').textContent = availableBooks;
+
+      // Load members stats
+      const membersResponse = await fetch('/api/v1/members');
+      const members = await membersResponse.json();
+      document.getElementById('total-members').textContent = members.length;
+
+      // For now, set active loans to 0 (we'd need a loans endpoint to get actual data)
+      document.getElementById('active-loans').textContent = '0';
+
+      // Load recent activity
+      loadRecentActivity(books, members);
+
+    } catch (error) {
+      console.error('Error loading dashboard stats:', error);
+      document.getElementById('recent-activity').innerHTML =
+        '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle"></i> Error loading data</div>';
+    }
+  }
+
+  function loadRecentActivity(books, members) {
+    const activityHtml = `
+        <div class="list-group list-group-flush">
+            ${books.slice(0, 3).map(book => `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-book text-primary me-2"></i>
+                            <strong>${book.title}</strong> by ${book.author}
+                        </div>
+                        <small class="text-muted">${new Date(book.created_at).toLocaleDateString()}</small>
+                    </div>
+                </div>
+            `).join('')}
+            ${members.slice(0, 2).map(member => `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <i class="fas fa-user text-success me-2"></i>
+                            New member: <strong>${member.name}</strong>
+                        </div>
+                        <small class="text-muted">${new Date(member.created_at).toLocaleDateString()}</small>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    document.getElementById('recent-activity').innerHTML = activityHtml ||
+      '<div class="text-center text-muted py-4"><p>No recent activity</p></div>';
+  }
+</script>
+{% endblock %}
